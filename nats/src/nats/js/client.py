@@ -165,8 +165,11 @@ class JetStreamContext(JetStreamManager):
         try:
             resp = json.loads(msg.data)
             if "error" in resp:
-                err = nats.js.errors.APIError.from_error(resp["error"])
-                future.set_exception(err)
+                try:
+                    nats.js.errors.APIError.from_error(resp["error"])
+                except nats.js.errors.APIError as e:
+                    # APIError.from_error raises, so capture and propagate it on the future.
+                    future.set_exception(e)
                 return
 
             ack = api.PubAck.from_response(resp)
